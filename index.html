@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar System Simulator</title>
+    <title>Galactic Explorer | Cosmic Simulation</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
     <!-- Three.js and OrbitControls via CDN -->
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
@@ -24,7 +24,10 @@
     
     <div id="ui-layer">
         <header>
-            <h1>SOLAR SYSTEM SIMULATION</h1>
+            <div class="logo">
+                <span class="icon">✨</span>
+                <h1>GALACTIC EXPLORER</h1>
+            </div>
             <div class="status-indicator">
                 <span class="dot"></span> LIVE DATA TRACKING
             </div>
@@ -105,16 +108,28 @@
                     <span class="value" id="t-distance">0 km</span>
                 </div>
                 <div class="data-row">
-                    <span class="label">REL. VELOCITY</span>
-                    <span class="value" id="t-velocity">0 km/s</span>
-                </div>
-                <div class="data-row">
                     <span class="label">ETA</span>
                     <span class="value" id="t-eta">Arrived</span>
                 </div>
-                <div class="data-row" style="margin-top: 1rem; border-top: 1px dotted var(--accent-cyan);">
+                <div class="data-row-special">
                     <span class="label">SUGGESTED SPEED</span>
-                    <span class="value" id="t-suggested-speed" style="color: var(--accent-purple);">N/A</span>
+                    <span class="value" id="t-suggested-speed">---</span>
+                </div>
+            </section>
+
+            <!-- New Educational Info Panel -->
+            <section id="info-panel" class="panel log-panel">
+                <div class="log-header">
+                    <span class="icon">📖</span>
+                    <h2>EXPLORER'S LOG</h2>
+                </div>
+                <div id="info-content">
+                    <h3 id="info-title">Earth</h3>
+                    <p id="info-description">Earth is our home planet and the only world known to harbor life.</p>
+                </div>
+                <div id="explore-actions">
+                    <button id="explore-btn" class="hidden">EXPLORE SURFACE</button>
+                    <button id="camera-lock-btn">LOCK CAMERA</button>
                 </div>
             </section>
         </aside>

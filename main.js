@@ -1,71 +1,76 @@
 import { simulation } from './simulation.js';
+import { celestialData } from './astronomy_data.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // Target Selection Logic
+    // UI Elements
     const destinations = document.querySelectorAll('.dest-item');
     const displayTarget = document.getElementById('t-target');
+    const displayDistance = document.getElementById('t-distance');
+    const displayETA = document.getElementById('t-eta');
+    const displaySuggested = document.getElementById('t-suggested-speed');
+    const speedSlider = document.getElementById('speed-slider');
+    const speedDisplay = document.getElementById('speed-display');
     
+    // Info Panel Elements
+    const infoTitle = document.getElementById('info-title');
+    const infoDesc = document.getElementById('info-description');
+    const exploreBtn = document.getElementById('explore-btn');
+
+    // Target Selection Logic
     destinations.forEach(item => {
         item.addEventListener('click', (e) => {
-            // Prevent summary click from double-firing or messing up active state
-            if (e.target.tagName !== 'SUMMARY' && e.target.tagName !== 'DIV') return;
+            // Prevent summary click from double-firing
+            if (e.target.tagName !== 'SUMMARY' && e.target.tagName !== 'DIV' && !e.target.classList.contains('dest-item')) return;
             
             destinations.forEach(d => d.classList.remove('active'));
-            e.target.classList.add('active');
+            const targetEl = e.target.closest('.dest-item') || e.target;
+            targetEl.classList.add('active');
             
-            const targetName = e.target.getAttribute('data-target');
+            const targetName = targetEl.getAttribute('data-target');
+            if (!targetName) return;
+
             displayTarget.textContent = targetName;
+            
+            // Update Info Panel with Educational Content
+            if (celestialData[targetName]) {
+                infoTitle.textContent = targetName;
+                infoDesc.textContent = celestialData[targetName].description || "Sector analysis complete. No biological anomalies detected.";
+            }
+
             simulation.setTarget(targetName);
         });
     });
-            
+
     // Start with Earth focused
     simulation.setTarget('Earth');
     displayTarget.textContent = 'Earth';
 
-    // Telemetry Callback
-    simulation.onTelemetryUpdate = (data) => {
-        document.getElementById('t-distance').textContent = `${data.distanceKm.toLocaleString(undefined, {maximumFractionDigits: 0})} km`;
-        document.getElementById('t-velocity').textContent = `${data.speedKmS.toLocaleString(undefined, {maximumFractionDigits: 2})} km/s`;
-        document.getElementById('t-eta').textContent = data.etaText;
-        document.getElementById('t-suggested-speed').textContent = data.suggestedSpeed;
-    };
-    
-    // Vehicle Selection Logic
-    const vehicles = document.querySelectorAll('.vehicle-btn');
-    vehicles.forEach(btn => {
+    // Vehicle Selection
+    const vehicleBtns = document.querySelectorAll('.vehicle-btn');
+    vehicleBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            vehicles.forEach(v => v.classList.remove('active'));
+            vehicleBtns.forEach(v => v.classList.remove('active'));
             e.currentTarget.classList.add('active');
             
-            const vehicleType = e.currentTarget.getAttribute('data-vehicle');
-            if (simulation.flightController) {
-                simulation.flightController.setVehicle(vehicleType);
-            }
+            const type = e.currentTarget.getAttribute('data-vehicle');
+            simulation.setVehicle(type);
         });
     });
-    
+
     // Speed Slider Logic
-    const speedSlider = document.getElementById('speed-slider');
-    const speedDisplay = document.getElementById('speed-display');
-    
     function updateSpeed() {
         const val = parseFloat(speedSlider.value);
         let displayStr = "";
         let speedKmS = 0;
         
         if (val < 10) {
-            // Orbital speeds: 0 to 50,000 km/h -> 0 to 13.88 km/s
             const speedKmH = (val / 10) * 50000;
             speedKmS = speedKmH / 3600;
             displayStr = `${Math.floor(speedKmH).toLocaleString()} km/h`;
         } else if (val < 90) {
-            // Interplanetary speeds: 14 km/s to 1,000 km/s (logarithmic scale feels better visually, but linear is fine)
             speedKmS = 14 + ((val - 10) / 80) * 986;
             displayStr = `${Math.floor(speedKmS).toLocaleString()} km/s`;
         } else {
-            // Relativistic speeds: 0.01c to 1.0c (c = 299,792.458 km/s)
             let fractionC = (val - 90) / 10;
             if(fractionC === 0) fractionC = 0.01;
             speedKmS = fractionC * 299792;
@@ -77,8 +82,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     speedSlider.addEventListener('input', updateSpeed);
-    
-    // Initialize speed
-    updateSpeed();
-    
+    updateSpeed(); // Initialize
+
+    // Telemetry Callback
+    simulation.onTelemetryUpdate = (data) => {
+        displayDistance.textContent = data.distanceKm > 1000000 
+            ? `${(data.distanceKm / 149597870).toFixed(4)} AU` 
+            : `${Math.round(data.distanceKm).toLocaleString()} km`;
+        
+        displayETA.textContent = data.etaText;
+        displaySuggested.textContent = data.suggestedSpeed;
+
+        // Show/Hide Explore button based on proximity (within 5000km)
+        if (data.distanceKm < 5000 && data.distanceKm > 0.1) {
+            exploreBtn.classList.remove('hidden');
+        } else {
+            exploreBtn.classList.add('hidden');
+        }
+    };
+
+    // Explore Button Click
+    exploreBtn.addEventListener('click', () => {
+        simulation.enterExplorationMode();
+    });
 });

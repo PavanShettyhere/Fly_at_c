@@ -10,8 +10,12 @@ class SolarSystemSimulation {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x020204);
         
-        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000000);
-        this.camera.position.set(0, 150, 400);
+        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 2000000); // Massive far plane
+        this.camera.position.set(0, 100, 300);
+        
+        // Target tracking lerp
+        this.cameraLookTarget = new THREE.Vector3(0,0,0);
+        this.lerpFactor = 0.05;
         
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true }); // Need log depth for massive scales
         this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -48,55 +52,64 @@ class SolarSystemSimulation {
     }
     
     initLighting() {
-        const ambientLight = new THREE.AmbientLight(0x222222);
+        const ambientLight = new THREE.AmbientLight(0x111111);
         this.scene.add(ambientLight);
         
         // Sun light
-        const pointLight = new THREE.PointLight(0xffffff, 2, 0, 0); 
+        const pointLight = new THREE.PointLight(0xffffff, 2.5, 0, 0); 
         pointLight.position.set(0, 0, 0);
         this.scene.add(pointLight);
+
+        // Sun Glow Halo
+        const glowGeo = new THREE.SphereGeometry(25, 32, 32);
+        const glowMat = new THREE.MeshBasicMaterial({
+            color: 0xffdd00,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.BackSide
+        });
+        const sunGlow = new THREE.Mesh(glowGeo, glowMat);
+        this.scene.add(sunGlow);
     }
     
     createStarfield() {
-        const starCount = 8000;
+        // High-end procedural galaxy stars
+        const starCount = 15000;
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(starCount * 3);
         const colors = new Float32Array(starCount * 3);
-        
+        const sizes = new Float32Array(starCount);
+
         for(let i=0; i<starCount; i++) {
-            // Random point on a large sphere (far outside solar system)
-            const r = 30000 + Math.random() * 15000;
+            const r = 50000 + Math.random() * 20000;
             const theta = 2 * Math.PI * Math.random();
             const phi = Math.acos(2 * Math.random() - 1);
             
-            const x = r * Math.sin(phi) * Math.cos(theta);
-            const y = r * Math.sin(phi) * Math.sin(theta);
-            const z = r * Math.cos(phi);
+            positions[i*3] = r * Math.sin(phi) * Math.cos(theta);
+            positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+            positions[i*3+2] = r * Math.cos(phi);
             
-            positions[i*3] = x;
-            positions[i*3+1] = y;
-            positions[i*3+2] = z;
-            
-            // Subtle color variations (white, slightly blue, slightly orange)
-            const colorType = Math.random();
             const color = new THREE.Color();
-            if (colorType > 0.9) color.setHex(0xaaccff);
-            else if (colorType > 0.8) color.setHex(0xffccaa);
+            const p = Math.random();
+            if (p > 0.95) color.setHex(0xaaccff); // Blue giant
+            else if (p > 0.90) color.setHex(0xffcc88); // Red giant
             else color.setHex(0xffffff);
             
             colors[i*3] = color.r;
             colors[i*3+1] = color.g;
             colors[i*3+2] = color.b;
+            sizes[i] = Math.random() * 5 + 1;
         }
         
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
         
         const material = new THREE.PointsMaterial({
-            size: 80,
+            size: 200, // Large points for glows
             vertexColors: true,
             transparent: true,
-            opacity: 0.9,
+            opacity: 0.8,
             sizeAttenuation: true
         });
         
@@ -255,6 +268,30 @@ class SolarSystemSimulation {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
     
+    enterExplorationMode() {
+        if (!this.currentTargetName || !this.bodies[this.currentTargetName]) return;
+        
+        const targetBody = this.bodies[this.currentTargetName];
+        const data = this.orbitData[this.currentTargetName];
+        
+        // Transition to low orbit / surface view
+        const surfaceAltitude = data.radius + 1.0; 
+        const currentPos = new THREE.Vector3();
+        targetBody.getWorldPosition(currentPos);
+        
+        // Offset slightly
+        this.camera.position.set(
+            currentPos.x,
+            currentPos.y + surfaceAltitude,
+            currentPos.z + surfaceAltitude
+        );
+        this.camera.lookAt(currentPos);
+        this.isTraveling = false;
+        
+        // Update Log
+        console.log(`Exploration mode engaged for ${this.currentTargetName}`);
+    }
+
     animate() {
         requestAnimationFrame(this.animate.bind(this));
         
@@ -368,11 +405,18 @@ class SolarSystemSimulation {
             }
             
             // Auto-steer towards target if traveling AND not manually steering
-            const isManuallySteering = this.flightController.keys.W || this.flightController.keys.S || 
-                                       this.flightController.keys.A || this.flightController.keys.D;
+            const isManuallySteering = this.flightController.keys.W || this.flightController.keys.A || 
+                                       this.flightController.keys.S || this.flightController.keys.D ||
+                                       this.flightController.keys.Q || this.flightController.keys.E;
             
             if(this.isTraveling && !isManuallySteering) {
-                this.camera.lookAt(targetPos);
+                // Smoothly look at target
+                const targetQuaternion = new THREE.Quaternion();
+                const dummy = new THREE.Object3D();
+                dummy.position.copy(this.camera.position);
+                dummy.lookAt(targetPos);
+                targetQuaternion.copy(dummy.quaternion);
+                this.camera.quaternion.slerp(targetQuaternion, this.lerpFactor);
             }
         } else {
             this.trajectoryLine.visible = false;

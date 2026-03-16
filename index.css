@@ -1,12 +1,14 @@
 :root {
-    --bg-color: #030305;
-    --panel-bg: rgba(10, 10, 15, 0.45);
-    --panel-border: rgba(255, 255, 255, 0.06);
-    --text-primary: #ffffff;
-    --text-secondary: #8a8d98;
+    --bg-color: #010103;
+    --panel-bg: rgba(6, 6, 12, 0.65);
+    --panel-border: rgba(0, 240, 255, 0.15);
+    --text-primary: #f0f4f8;
+    --text-secondary: #94a3b8;
     --accent-cyan: #00f0ff;
-    --accent-purple: #9d00ff;
+    --accent-purple: #c084fc;
+    --accent-orange: #fb923c;
     --font-main: 'Inter', sans-serif;
+    --font-heading: 'Outfit', sans-serif;
 }
 
 * {
@@ -23,6 +25,8 @@ body {
     overflow: hidden;
     width: 100vw;
     height: 100vh;
+    background-image: 
+        radial-gradient(circle at 50% 50%, rgba(10, 10, 40, 0.3) 0%, transparent 80%);
 }
 
 #canvas-container {
@@ -72,16 +76,24 @@ header {
     padding: 1rem 2rem;
 }
 
+header .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 header h1 {
-    font-size: 1.2rem;
-    font-weight: 800;
-    letter-spacing: 2px;
-    background: linear-gradient(90deg, #fff, var(--text-secondary));
-    background-clip: text;
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
 }
+
+.logo .icon { font-size: 1.5rem; }
 
 .status-indicator {
     font-size: 0.8rem;
@@ -138,11 +150,23 @@ header h1 {
 
 /* Typography & Lists */
 h2 {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    letter-spacing: 1.5px;
-    margin-bottom: 1rem;
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    color: var(--accent-cyan);
+    letter-spacing: 2px;
+    margin-bottom: 1.2rem;
     text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0.8;
+}
+
+h2::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent-cyan), transparent);
 }
 
 #destination-list {
@@ -256,10 +280,103 @@ details[open] summary::after {
 }
 
 .data-row .value {
-    font-family: monospace;
-    font-size: 1rem;
-    font-weight: 600;
+    font-family: 'Outfit', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.data-row-special {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--panel-border);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.data-row-special .label {
+    font-size: 0.7rem;
+    color: var(--accent-purple);
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.data-row-special .value {
+    font-size: 1.3rem;
+    color: var(--accent-purple);
+    text-shadow: 0 0 15px rgba(157, 0, 255, 0.4);
+}
+
+/* Log Panel Styling */
+.log-panel {
+    margin-top: 1.5rem;
+    border-color: rgba(157, 0, 255, 0.2);
+}
+
+.log-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+#info-content h3 {
+    font-family: var(--font-heading);
     color: var(--accent-cyan);
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+
+#info-description {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    max-height: 150px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+#info-description::-webkit-scrollbar {
+    width: 4px;
+}
+
+#info-description::-webkit-scrollbar-thumb {
+    background: var(--panel-border);
+    border-radius: 2px;
+}
+
+#explore-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#explore-btn, #camera-lock-btn {
+    width: 100%;
+    padding: 0.8rem;
+    background: rgba(0, 240, 255, 0.1);
+    border: 1px solid var(--accent-cyan);
+    color: var(--accent-cyan);
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 800;
+    letter-spacing: 1px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#explore-btn:hover, #camera-lock-btn:hover {
+    background: var(--accent-cyan);
+    color: var(--bg-color);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+#explore-btn.hidden {
+    display: none;
 }
 
 /* Slider Controls */

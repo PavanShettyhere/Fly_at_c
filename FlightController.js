@@ -110,7 +110,13 @@ export class FlightController {
         const helmet = new THREE.Mesh(helmetGeo, helmetMat);
         helmet.position.set(0, 0.8, -0.8);
         
-        duckGroup.add(dBody, dHead, beak, lEye, rEye, helmet, tail);
+        // Backpack (Jetpack)
+        const packGeo = new THREE.BoxGeometry(1.2, 1.2, 0.4);
+        const packMat = new THREE.MeshStandardMaterial({color: 0x999999, metalness: 0.8});
+        const pack = new THREE.Mesh(packGeo, packMat);
+        pack.position.set(0, 0.5, 0.8);
+        
+        duckGroup.add(dBody, dHead, beak, lEye, rEye, helmet, tail, pack);
         duckGroup.scale.set(0.4, 0.4, 0.4);
         this.vehicles['duck'] = duckGroup;
         
