@@ -36,10 +36,16 @@ class SolarSystemSimulation {
         this.travelSpeedKmS = 0;
         this.isTraveling = false;
         this.currentTargetName = null;
-        this.onTelemetryUpdate = null; // Callback for UI
+        this.onTelemetryUpdate = null; 
+        
+        // Game Features
+        this.flags = [];
+        this.showCockpit = true;
+        this.spaceMode = 'cinematic'; // Default
         
         this.initLighting();
         this.createStarfield();
+        this.createCockpit(); // New
         this.createCelestialBodies();
         this.createAsteroidBelt();
         
@@ -73,48 +79,125 @@ class SolarSystemSimulation {
     }
     
     createStarfield() {
-        // High-end procedural galaxy stars
-        const starCount = 15000;
+        if (this.stars) this.scene.remove(this.stars);
+        if (this.nebulae) this.scene.remove(this.nebulae);
+
+        const starCount = this.spaceMode === 'cinematic' ? 20000 : 5000;
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(starCount * 3);
         const colors = new Float32Array(starCount * 3);
-        const sizes = new Float32Array(starCount);
-
+        
         for(let i=0; i<starCount; i++) {
-            const r = 50000 + Math.random() * 20000;
+            const r = 100000 + Math.random() * 50000;
             const theta = 2 * Math.PI * Math.random();
             const phi = Math.acos(2 * Math.random() - 1);
-            
             positions[i*3] = r * Math.sin(phi) * Math.cos(theta);
             positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
             positions[i*3+2] = r * Math.cos(phi);
             
-            const color = new THREE.Color();
             const p = Math.random();
-            if (p > 0.95) color.setHex(0xaaccff); // Blue giant
-            else if (p > 0.90) color.setHex(0xffcc88); // Red giant
+            const color = new THREE.Color();
+            if (p > 0.98) color.setHex(0xaaccff);
+            else if (p > 0.95) color.setHex(0xffcc88);
             else color.setHex(0xffffff);
             
             colors[i*3] = color.r;
             colors[i*3+1] = color.g;
             colors[i*3+2] = color.b;
-            sizes[i] = Math.random() * 5 + 1;
         }
         
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
         
         const material = new THREE.PointsMaterial({
-            size: 200, // Large points for glows
+            size: this.spaceMode === 'cinematic' ? 150 : 50,
             vertexColors: true,
             transparent: true,
             opacity: 0.8,
             sizeAttenuation: true
         });
         
-        const stars = new THREE.Points(geometry, material);
-        this.scene.add(stars);
+        this.stars = new THREE.Points(geometry, material);
+        this.scene.add(this.stars);
+
+        // Add Nebula Glows in Cinematic mode
+        if (this.spaceMode === 'cinematic') {
+            const nGeo = new THREE.SphereGeometry(1, 16, 16);
+            this.nebulae = new THREE.Group();
+            for(let i=0; i<15; i++) {
+                const nMat = new THREE.MeshBasicMaterial({
+                    color: new THREE.Color().setHSL(Math.random(), 0.5, 0.2),
+                    transparent: true,
+                    opacity: 0.05,
+                    side: THREE.BackSide
+                });
+                const n = new THREE.Mesh(nGeo, nMat);
+                const r = 120000;
+                n.position.set(
+                    (Math.random()-0.5)*r,
+                    (Math.random()-0.5)*r,
+                    (Math.random()-0.5)*r
+                );
+                n.scale.setScalar(20000 + Math.random()*30000);
+                this.nebulae.add(n);
+            }
+            this.scene.add(this.nebulae);
+        }
+    }
+
+    createCockpit() {
+        this.cockpitGroup = new THREE.Group();
+        
+        // Frame pieces (HUD-like)
+        const frameMat = new THREE.MeshBasicMaterial({ 
+            color: 0x00f0ff, 
+            transparent: true, 
+            opacity: 0.1,
+            wireframe: true 
+        });
+        
+        // Horizontal bar
+        const barGeo = new THREE.BoxGeometry(2, 0.05, 0.1);
+        const bar = new THREE.Mesh(barGeo, frameMat);
+        bar.position.set(0, -0.6, -1);
+        
+        // HUD circle
+        const ringGeo = new THREE.RingGeometry(0.3, 0.31, 32);
+        const ring = new THREE.Mesh(ringGeo, frameMat);
+        ring.position.set(0, 0, -1);
+        
+        this.cockpitGroup.add(bar, ring);
+        this.scene.add(this.cockpitGroup);
+    }
+
+    plantFlag() {
+        const flagGroup = new THREE.Group();
+        const poleGeo = new THREE.CylinderGeometry(0.02, 0.02, 1);
+        const poleMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+        const pole = new THREE.Mesh(poleGeo, poleMat);
+        
+        const clothGeo = new THREE.PlaneGeometry(0.6, 0.4);
+        const clothMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, side: THREE.DoubleSide });
+        const cloth = new THREE.Mesh(clothGeo, clothMat);
+        cloth.position.set(0.3, 0.3, 0);
+        
+        flagGroup.add(pole, cloth);
+        flagGroup.position.copy(this.camera.position);
+        flagGroup.quaternion.copy(this.camera.quaternion);
+        
+        this.scene.add(flagGroup);
+        this.flags.push(flagGroup);
+        return true;
+    }
+
+    setSpaceMode(mode) {
+        this.spaceMode = mode;
+        this.createStarfield();
+    }
+
+    setCockpitVisible(visible) {
+        this.showCockpit = visible;
+        this.cockpitGroup.visible = visible;
     }
     
     initTrajectoryLine() {
@@ -443,6 +526,12 @@ class SolarSystemSimulation {
             });
         }
         
+        // Update Cockpit position
+        if (this.showCockpit) {
+            this.cockpitGroup.position.copy(this.camera.position);
+            this.cockpitGroup.quaternion.copy(this.camera.quaternion);
+        }
+
         this.renderer.render(this.scene, this.camera);
     }
 }

@@ -17,8 +17,20 @@ export class FlightController {
             Shift: false, Space: false
         };
         
-        this.turnSpeed = 2.0; // Increased
-        this.baseThrust = 100; // Multiplier for manual movement speed
+        this.turnSpeed = 1.2; 
+        this.baseThrust = 1.0; 
+        
+        // Momentum Physics
+        this.velocity = new THREE.Vector3(0, 0, 0);
+        this.angularVelocity = new THREE.Vector3(0, 0, 0);
+        this.friction = 0.98; // Damping
+        this.thrustForce = 5.0;
+        this.rotateForce = 1.5;
+        
+        // Particle System for Boosters
+        this.particles = [];
+        this.particleGroup = new THREE.Group();
+        this.scene.add(this.particleGroup);
         
         // Ship Avatar Mesh
         this.shipWrapper = new THREE.Group();
@@ -39,16 +51,28 @@ export class FlightController {
     buildVehicles() {
         this.vehicles = {};
         
-        // 1. Rocket
+        // 1. Rocket (Toy Style)
         const rocketGroup = new THREE.Group();
+        const toyMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.1,
+            roughness: 0.2,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1
+        });
+        const accentMat = new THREE.MeshPhysicalMaterial({
+            color: 0xff3300,
+            metalness: 0.1,
+            roughness: 0.2,
+            clearcoat: 1.0
+        });
+
         const bodyGeo = new THREE.CylinderGeometry(0.5, 0.5, 3, 16);
-        const bodyMat = new THREE.MeshStandardMaterial({color: 0xdddddd});
-        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        const body = new THREE.Mesh(bodyGeo, toyMat);
         body.rotation.x = Math.PI / 2;
         
         const coneGeo = new THREE.ConeGeometry(0.5, 1, 16);
-        const coneMat = new THREE.MeshStandardMaterial({color: 0xff3300});
-        const cone = new THREE.Mesh(coneGeo, coneMat);
+        const cone = new THREE.Mesh(coneGeo, accentMat);
         cone.position.z = -2;
         cone.rotation.x = -Math.PI / 2;
         
@@ -62,9 +86,14 @@ export class FlightController {
         rocketGroup.scale.set(0.5, 0.5, 0.5);
         this.vehicles['rocket'] = rocketGroup;
         
-        // 2. Duck (More detailed)
+        // 2. Duck (Toy Style)
         const duckGroup = new THREE.Group();
-        const dMat = new THREE.MeshStandardMaterial({color: 0xffcc00, roughness: 0.3});
+        const dMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffcc00, 
+            roughness: 0.1,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.05
+        });
         
         // Body (Egg shape)
         const dBodyGeo = new THREE.SphereGeometry(1, 24, 24);
@@ -120,12 +149,14 @@ export class FlightController {
         duckGroup.scale.set(0.4, 0.4, 0.4);
         this.vehicles['duck'] = duckGroup;
         
-        // 3. Roadster (More detailed sports car look)
+        // 3. Roadster (Toy Style)
         const carGroup = new THREE.Group();
-        const paintMat = new THREE.MeshStandardMaterial({
-            color: 0x770000, 
-            metalness: 0.9, 
-            roughness: 0.1
+        const paintMat = new THREE.MeshPhysicalMaterial({
+            color: 0xee0000, 
+            metalness: 0.5, 
+            roughness: 0.1,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.05
         });
         
         const chassis = new THREE.Mesh(new THREE.BoxGeometry(2, 0.4, 4), paintMat);
@@ -192,19 +223,78 @@ export class FlightController {
         // ... (This logic will be handled inside simulation.js to feed vectors here)
     }
 
-    update(delta) {
-        // Manual steering
-        if (this.keys.W) this.camera.rotateX(this.turnSpeed * delta);
-        if (this.keys.S) this.camera.rotateX(-this.turnSpeed * delta);
-        if (this.keys.A) this.camera.rotateY(this.turnSpeed * delta);
-        if (this.keys.D) this.camera.rotateY(-this.turnSpeed * delta);
-        if (this.keys.Q) this.camera.rotateZ(this.turnSpeed * delta);
-        if (this.keys.E) this.camera.rotateZ(-this.turnSpeed * delta);
+    createBoosterParticle() {
+        const pGeo = new THREE.SphereGeometry(0.1, 4, 4);
+        const pMat = new THREE.MeshBasicMaterial({
+            color: 0x00f0ff,
+            transparent: true,
+            opacity: 0.8
+        });
+        const p = new THREE.Mesh(pGeo, pMat);
         
-        // Position Ship Wrapper exactly in front of the camera, looking the same way
+        // Position at vehicle back
+        const offset = new THREE.Vector3(0, -0.5, 1.5).applyQuaternion(this.camera.quaternion);
+        p.position.copy(this.camera.position).add(offset);
+        
+        const velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.5,
+            (Math.random() - 0.5) * 0.5,
+            2 + Math.random() * 2
+        ).applyQuaternion(this.camera.quaternion);
+        
+        this.particleGroup.add(p);
+        this.particles.push({ mesh: p, vel: velocity, life: 1.0 });
+    }
+
+    update(delta) {
+        // Linear Input -> Forces
+        if (this.keys.Shift) {
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
+            this.velocity.add(forward.multiplyScalar(this.thrustForce * delta));
+            if (Math.random() > 0.5) this.createBoosterParticle();
+        }
+        if (this.keys.Space) {
+            const backward = new THREE.Vector3(0, 0, 1).applyQuaternion(this.camera.quaternion);
+            this.velocity.add(backward.multiplyScalar(this.thrustForce * delta));
+        }
+
+        // Angular Input -> Torques
+        if (this.keys.W) this.angularVelocity.x += this.rotateForce * delta;
+        if (this.keys.S) this.angularVelocity.x -= this.rotateForce * delta;
+        if (this.keys.A) this.angularVelocity.y += this.rotateForce * delta;
+        if (this.keys.D) this.angularVelocity.y -= this.rotateForce * delta;
+        if (this.keys.Q) this.angularVelocity.z += this.rotateForce * delta;
+        if (this.keys.E) this.angularVelocity.z -= this.rotateForce * delta;
+
+        // Apply Damping
+        this.velocity.multiplyScalar(this.friction);
+        this.angularVelocity.multiplyScalar(this.friction);
+
+        // Apply velocities to camera
+        this.camera.position.add(this.velocity);
+        
+        // Rotation is trickier with quaternion
+        this.camera.rotateX(this.angularVelocity.x * delta);
+        this.camera.rotateY(this.angularVelocity.y * delta);
+        this.camera.rotateZ(this.angularVelocity.z * delta);
+
+        // Particles Update
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            p.mesh.position.add(p.vel.clone().multiplyScalar(delta * 10));
+            p.life -= delta * 2;
+            p.mesh.scale.setScalar(p.life);
+            p.mesh.material.opacity = p.life;
+            if (p.life <= 0) {
+                this.particleGroup.remove(p.mesh);
+                this.particles.splice(i, 1);
+            }
+        }
+        
+        // Position Ship Wrapper exactly in front of the camera
         this.shipWrapper.position.copy(this.camera.position);
         this.shipWrapper.quaternion.copy(this.camera.quaternion);
-        this.shipWrapper.translateZ(-3); // Put it 3 units in front
-        this.shipWrapper.translateY(-0.8); // Slightly below center
+        this.shipWrapper.translateZ(-3); 
+        this.shipWrapper.translateY(-0.8); 
     }
 }

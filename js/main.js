@@ -15,6 +15,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const infoTitle = document.getElementById('info-title');
     const infoDesc = document.getElementById('info-description');
     const exploreBtn = document.getElementById('explore-btn');
+    const plantFlagBtn = document.getElementById('plant-flag-btn');
+    
+    // Settings Elements
+    const spaceModeSelect = document.getElementById('space-mode');
+    const cockpitToggle = document.getElementById('cockpit-toggle');
+    
+    // Visited Logic
+    let visited = JSON.parse(localStorage.getItem('galactic_visited') || '[]');
+    function updateChecklist() {
+        visited.forEach(body => {
+            const item = document.querySelector(`.check-item[data-body="${body}"]`);
+            if (item) {
+                item.classList.add('done');
+                item.classList.remove('lock');
+            }
+        });
+    }
+    updateChecklist();
 
     // Target Selection Logic
     destinations.forEach(item => {
@@ -104,5 +122,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Explore Button Click
     exploreBtn.addEventListener('click', () => {
         simulation.enterExplorationMode();
+        
+        const target = simulation.currentTargetName;
+        if (target && !visited.includes(target)) {
+            visited.push(target);
+            localStorage.setItem('galactic_visited', JSON.stringify(visited));
+            updateChecklist();
+        }
+    });
+
+    // Plant Flag
+    plantFlagBtn.addEventListener('click', () => {
+        simulation.plantFlag();
+    });
+
+    // Settings Listeners
+    spaceModeSelect.addEventListener('change', (e) => {
+        simulation.setSpaceMode(e.target.value);
+    });
+
+    cockpitToggle.addEventListener('change', (e) => {
+        simulation.setCockpitVisible(e.target.checked);
     });
 });

@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="css/style.css">
     <!-- Three.js and OrbitControls via CDN -->
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
@@ -86,12 +86,22 @@
                 </div>
             </section>
             
+            </section>
+
             <section class="panel">
-                <h2>VEHICLE SELECTION</h2>
-                <div class="vehicle-options">
-                    <button class="vehicle-btn active" data-vehicle="rocket">🚀 EXPLORER ROCKET</button>
-                    <button class="vehicle-btn" data-vehicle="duck">🦆 ASTRO-DUCK</button>
-                    <button class="vehicle-btn" data-vehicle="roadster">🚗 STARMAN ROADSTER</button>
+                <h2>EXPLORATION LOG</h2>
+                <div id="visited-checklist" class="checklist">
+                    <!-- Dynamic Checklist -->
+                    <div class="check-item lock" data-body="Sun">☀️ Sun</div>
+                    <div class="check-item lock" data-body="Mercury">🌑 Mercury</div>
+                    <div class="check-item lock" data-body="Venus">🌕 Venus</div>
+                    <div class="check-item lock" data-body="Earth">🌍 Earth</div>
+                    <div class="check-item lock" data-body="Moon">🌙 Moon</div>
+                    <div class="check-item lock" data-body="Mars">🔴 Mars</div>
+                    <div class="check-item lock" data-body="Jupiter">🟠 Jupiter</div>
+                    <div class="check-item lock" data-body="Saturn">🪐 Saturn</div>
+                    <div class="check-item lock" data-body="Uranus">💎 Uranus</div>
+                    <div class="check-item lock" data-body="Neptune">🔵 Neptune</div>
                 </div>
             </section>
         </aside>
@@ -129,7 +139,22 @@
                 </div>
                 <div id="explore-actions">
                     <button id="explore-btn" class="hidden">EXPLORE SURFACE</button>
+                    <button id="plant-flag-btn">PLANT FLAG</button>
                     <button id="camera-lock-btn">LOCK CAMERA</button>
+                </div>
+            </section>
+            <section class="panel settings-panel">
+                <h2>SIMULATION SETTINGS</h2>
+                <div class="setting-row">
+                    <span>Space Aesthetic</span>
+                    <select id="space-mode">
+                        <option value="realistic">Realistic (Flat Black)</option>
+                        <option value="cinematic" selected>Cinematic (Nebula)</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <span>Show Cockpit</span>
+                    <input type="checkbox" id="cockpit-toggle" checked>
                 </div>
             </section>
         </aside>
@@ -145,10 +170,22 @@
                 <div class="current-speed-readout">CURRENT PROPULSION: <span id="speed-display">28,000 km/h</span></div>
             </div>
         </footer>
+
+        <!-- Controls Help Overlay -->
+        <div id="controls-help">
+            <div class="help-content">
+                <h3>CONTROLS</h3>
+                <div class="key-row"><span class="key">W</span><span class="key">S</span> Pitch Up/Down</div>
+                <div class="key-row"><span class="key">A</span><span class="key">D</span> Yaw Left/Right</div>
+                <div class="key-row"><span class="key">Q</span><span class="key">E</span> Roll Left/Right</div>
+                <div class="key-row"><span class="key">Shift</span> Thrust Forward</div>
+                <div class="key-row"><span class="key">Space</span> Brake / Reverse</div>
+            </div>
+        </div>
     </div>
 
     <!-- Application Logic -->
-    <script type="module" src="simulation.js"></script>
-    <script type="module" src="main.js"></script>
+    <script type="module" src="js/simulation.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
