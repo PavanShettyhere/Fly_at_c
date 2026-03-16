@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <!-- Three.js and OrbitControls via CDN -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.154.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.154.0/examples/jsm/"
+        }
+      }
+    </script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div id="ui-layer">
+        <header>
+            <h1>SOLAR SYSTEM SIMULATION</h1>
+            <div class="status-indicator">
+                <span class="dot"></span> LIVE DATA TRACKING
+            </div>
+        </header>
+
+        <aside id="sidebar-left">
+            <section class="panel">
+                <h2>DESTINATIONS</h2>
+                <div id="destination-list" class="accordion-menu">
+                    <!-- Sun -->
+                    <div class="dest-item" data-target="Sun">Sol (Sun)</div>
+                    
+                    <!-- Inner Planets -->
+                    <div class="dest-item" data-target="Mercury">Mercury</div>
+                    <div class="dest-item" data-target="Venus">Venus</div>
+                    
+                    <!-- Earth System -->
+                    <details open>
+                        <summary class="dest-item" data-target="Earth">Earth</summary>
+                        <div class="nested-items">
+                            <div class="dest-item" data-target="Moon">Luna (Moon)</div>
+                            <div class="dest-item" data-target="ISS">ISS (Station)</div>
+                        </div>
+                    </details>
+                    
+                    <!-- Mars System -->
+                    <details>
+                        <summary class="dest-item" data-target="Mars">Mars</summary>
+                        <div class="nested-items">
+                            <div class="dest-item" data-target="Phobos">Phobos</div>
+                            <div class="dest-item" data-target="Deimos">Deimos</div>
+                        </div>
+                    </details>
+                    
+                    <!-- Outer Planets -->
+                    <details>
+                        <summary class="dest-item" data-target="Jupiter">Jupiter</summary>
+                        <div class="nested-items">
+                            <div class="dest-item" data-target="Io">Io</div>
+                            <div class="dest-item" data-target="Europa">Europa</div>
+                            <div class="dest-item" data-target="Ganymede">Ganymede</div>
+                            <div class="dest-item" data-target="Callisto">Callisto</div>
+                        </div>
+                    </details>
+                    
+                    <details>
+                        <summary class="dest-item" data-target="Saturn">Saturn</summary>
+                        <div class="nested-items">
+                            <div class="dest-item" data-target="Titan">Titan</div>
+                            <div class="dest-item" data-target="Enceladus">Enceladus</div>
+                        </div>
+                    </details>
+                    
+                    <div class="dest-item" data-target="Uranus">Uranus</div>
+                    <div class="dest-item" data-target="Neptune">Neptune</div>
+                </div>
+            </section>
+            
+            <section class="panel">
+                <h2>VEHICLE SELECTION</h2>
+                <div class="vehicle-options">
+                    <button class="vehicle-btn active" data-vehicle="rocket">🚀 EXPLORER ROCKET</button>
+                    <button class="vehicle-btn" data-vehicle="duck">🦆 ASTRO-DUCK</button>
+                    <button class="vehicle-btn" data-vehicle="roadster">🚗 STARMAN ROADSTER</button>
+                </div>
+            </section>
+        </aside>
+
+        <aside id="sidebar-right">
+            <section class="panel telemetry">
+                <h2>TELEMETRY</h2>
+                <div class="data-row">
+                    <span class="label">TARGET</span>
+                    <span class="value" id="t-target">Earth</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">DISTANCE</span>
+                    <span class="value" id="t-distance">0 km</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">REL. VELOCITY</span>
+                    <span class="value" id="t-velocity">0 km/s</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">ETA</span>
+                    <span class="value" id="t-eta">Arrived</span>
+                </div>
+                <div class="data-row" style="margin-top: 1rem; border-top: 1px dotted var(--accent-cyan);">
+                    <span class="label">SUGGESTED SPEED</span>
+                    <span class="value" id="t-suggested-speed" style="color: var(--accent-purple);">N/A</span>
+                </div>
+            </section>
+        </aside>
+
+        <footer id="control-bar">
+            <div class="slider-container">
+                <div class="slider-labels">
+                    <span>ORBITAL (km/h)</span>
+                    <span>INTERPLANETARY (km/s)</span>
+                    <span>LIGHT SPEED (1.0c)</span>
+                </div>
+                <input type="range" id="speed-slider" min="0" max="100" value="10" step="0.1">
+                <div class="current-speed-readout">CURRENT PROPULSION: <span id="speed-display">28,000 km/h</span></div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Application Logic -->
+    <script type="module" src="simulation.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
