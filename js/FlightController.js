@@ -40,12 +40,26 @@ export class FlightController {
         this.buildVehicles();
         this.setVehicle('rocket');
         
+        this.cameraLocked = true; // Default locked to ship rotation
+        
+        // Mouse Controls
+        this.isMouseDown = false;
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.mouseSensitivity = 0.002;
+        
         // Bindings
         this.onKeyDown = this.onKeyDown.bind(this);
         this.onKeyUp = this.onKeyUp.bind(this);
+        this.onMouseDown = this.onMouseDown.bind(this);
+        this.onMouseMove = this.onMouseMove.bind(this);
+        this.onMouseUp = this.onMouseUp.bind(this);
         
         window.addEventListener('keydown', this.onKeyDown);
         window.addEventListener('keyup', this.onKeyUp);
+        window.addEventListener('mousedown', this.onMouseDown);
+        window.addEventListener('mousemove', this.onMouseMove);
+        window.addEventListener('mouseup', this.onMouseUp);
     }
     
     buildVehicles() {
@@ -77,13 +91,13 @@ export class FlightController {
         cone.rotation.x = -Math.PI / 2;
         
         const finGeo = new THREE.BoxGeometry(0.1, 1, 1);
-        const fin1 = new THREE.Mesh(finGeo, coneMat);
+        const fin1 = new THREE.Mesh(finGeo, accentMat);
         fin1.position.set(0.7, 0, 1);
-        const fin2 = new THREE.Mesh(finGeo, coneMat);
+        const fin2 = new THREE.Mesh(finGeo, accentMat);
         fin2.position.set(-0.7, 0, 1);
         
         rocketGroup.add(body, cone, fin1, fin2);
-        rocketGroup.scale.set(0.5, 0.5, 0.5);
+        rocketGroup.scale.set(0.15, 0.15, 0.15); // Smaller
         this.vehicles['rocket'] = rocketGroup;
         
         // 2. Duck (Toy Style)
@@ -146,7 +160,7 @@ export class FlightController {
         pack.position.set(0, 0.5, 0.8);
         
         duckGroup.add(dBody, dHead, beak, lEye, rEye, helmet, tail, pack);
-        duckGroup.scale.set(0.4, 0.4, 0.4);
+        duckGroup.scale.set(0.15, 0.15, 0.15); // Smaller
         this.vehicles['duck'] = duckGroup;
         
         // 3. Roadster (Toy Style)
@@ -179,7 +193,7 @@ export class FlightController {
         windshield.position.set(0, 0.7, -0.2);
         
         carGroup.add(chassis, hood, spoiler, seat, windshield);
-        carGroup.scale.set(0.4, 0.4, 0.4);
+        carGroup.scale.set(0.15, 0.15, 0.15); // Smaller
         this.vehicles['roadster'] = carGroup;
     }
     
@@ -217,6 +231,31 @@ export class FlightController {
             case 'ShiftLeft': this.keys.Shift = false; break;
             case 'Space': this.keys.Space = false; break;
         }
+    }
+    
+    onMouseUp(event) {
+        this.isMouseDown = false;
+    }
+    
+    onMouseDown(event) {
+        if (event.button !== 0) return; // Only left click
+        this.isMouseDown = true;
+        this.mouseX = event.clientX;
+        this.mouseY = event.clientY;
+    }
+    
+    onMouseMove(event) {
+        if (!this.isMouseDown) return;
+        
+        const deltaX = event.clientX - this.mouseX;
+        const deltaY = event.clientY - this.mouseY;
+        
+        this.mouseX = event.clientX;
+        this.mouseY = event.clientY;
+        
+        // Apply to angular velocity (NASA style drag-to-steer)
+        this.angularVelocity.y -= deltaX * this.mouseSensitivity;
+        this.angularVelocity.x -= deltaY * this.mouseSensitivity;
     }
     
     setAutoPilot(targetPos, speed, delta) {
@@ -273,10 +312,27 @@ export class FlightController {
         // Apply velocities to camera
         this.camera.position.add(this.velocity);
         
-        // Rotation is trickier with quaternion
-        this.camera.rotateX(this.angularVelocity.x * delta);
-        this.camera.rotateY(this.angularVelocity.y * delta);
-        this.camera.rotateZ(this.angularVelocity.z * delta);
+        // Rotation Control
+        if (this.cameraLocked) {
+            // Standard: Camera follows rotation inputs directly
+            this.camera.rotateX(this.angularVelocity.x * delta);
+            this.camera.rotateY(this.angularVelocity.y * delta);
+            this.camera.rotateZ(this.angularVelocity.z * delta);
+        } else {
+            // Unlocked: Stabilized horizon - only allow limited X/Y rotation for looking around
+            this.camera.rotateX(this.angularVelocity.x * delta * 0.3);
+            this.camera.rotateY(this.angularVelocity.y * delta * 0.3);
+        }
+
+        // --- Character Orientation & Banking ---
+        // Tilt the ship based on rotation speed for a dynamic feel
+        const bankTargetX = -this.angularVelocity.x * 0.8; 
+        const bankTargetZ = -this.angularVelocity.y * 3.0; 
+        
+        if (this.currentVehicle) {
+            this.currentVehicle.rotation.x = THREE.MathUtils.lerp(this.currentVehicle.rotation.x, bankTargetX, 0.1);
+            this.currentVehicle.rotation.z = THREE.MathUtils.lerp(this.currentVehicle.rotation.z, bankTargetZ, 0.1);
+        }
 
         // Particles Update
         for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -291,10 +347,11 @@ export class FlightController {
             }
         }
         
-        // Position Ship Wrapper exactly in front of the camera
+        // Position Ship Wrapper
         this.shipWrapper.position.copy(this.camera.position);
         this.shipWrapper.quaternion.copy(this.camera.quaternion);
-        this.shipWrapper.translateZ(-3); 
-        this.shipWrapper.translateY(-0.8); 
+        
+        this.shipWrapper.translateZ(-3.5); 
+        this.shipWrapper.translateY(-0.7); // Moved down to be just above the speed control bar
     }
 }

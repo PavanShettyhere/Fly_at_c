@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="css/style.css">
     <!-- Three.js and OrbitControls via CDN -->
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+
     <script type="importmap">
       {
         "imports": {
@@ -86,23 +88,15 @@
                 </div>
             </section>
             
+            <section class="panel">
+                <h2>VEHICLE SELECTION</h2>
+                <div class="vehicle-options">
+                    <button class="vehicle-btn active" data-vehicle="rocket">🚀 EXPLORER ROCKET</button>
+                    <button class="vehicle-btn" data-vehicle="duck">🦆 ASTRO-DUCK</button>
+                    <button class="vehicle-btn" data-vehicle="roadster">🚗 STARMAN ROADSTER</button>
+                </div>
             </section>
 
-            <section class="panel">
-                <h2>EXPLORATION LOG</h2>
-                <div id="visited-checklist" class="checklist">
-                    <!-- Dynamic Checklist -->
-                    <div class="check-item lock" data-body="Sun">☀️ Sun</div>
-                    <div class="check-item lock" data-body="Mercury">🌑 Mercury</div>
-                    <div class="check-item lock" data-body="Venus">🌕 Venus</div>
-                    <div class="check-item lock" data-body="Earth">🌍 Earth</div>
-                    <div class="check-item lock" data-body="Moon">🌙 Moon</div>
-                    <div class="check-item lock" data-body="Mars">🔴 Mars</div>
-                    <div class="check-item lock" data-body="Jupiter">🟠 Jupiter</div>
-                    <div class="check-item lock" data-body="Saturn">🪐 Saturn</div>
-                    <div class="check-item lock" data-body="Uranus">💎 Uranus</div>
-                    <div class="check-item lock" data-body="Neptune">🔵 Neptune</div>
-                </div>
             </section>
         </aside>
 
@@ -137,10 +131,27 @@
                     <h3 id="info-title">Earth</h3>
                     <p id="info-description">Earth is our home planet and the only world known to harbor life.</p>
                 </div>
-                <div id="explore-actions">
-                    <button id="explore-btn" class="hidden">EXPLORE SURFACE</button>
+                
+                <div id="mission-log" style="margin-top: 1.5rem;">
+                    <h2 style="font-size: 0.7rem;">MISSION CHECKLIST</h2>
+                    <div id="visited-checklist" class="checklist">
+                        <div class="check-item lock" data-body="Sun">☀️ Sun</div>
+                        <div class="check-item lock" data-body="Mercury">🌑 Mercury</div>
+                        <div class="check-item lock" data-body="Venus">🌕 Venus</div>
+                        <div class="check-item lock" data-body="Earth">🌍 Earth</div>
+                        <div class="check-item lock" data-body="Moon">🌙 Moon</div>
+                        <div class="check-item lock" data-body="Mars">🔴 Mars</div>
+                        <div class="check-item lock" data-body="Jupiter">🟠 Jupiter</div>
+                        <div class="check-item lock" data-body="Saturn">🪐 Saturn</div>
+                        <div class="check-item lock" data-body="Uranus">💎 Uranus</div>
+                        <div class="check-item lock" data-body="Neptune">🔵 Neptune</div>
+                    </div>
+                </div>
+
+                <div id="explore-actions" style="margin-top: 1.5rem;">
+                    <button id="read-more-btn">READ MORE</button>
                     <button id="plant-flag-btn">PLANT FLAG</button>
-                    <button id="camera-lock-btn">LOCK CAMERA</button>
+                    <button id="camera-lock-btn">LOCK VIEW: OFF</button>
                 </div>
             </section>
             <section class="panel settings-panel">
@@ -180,6 +191,21 @@
                 <div class="key-row"><span class="key">Q</span><span class="key">E</span> Roll Left/Right</div>
                 <div class="key-row"><span class="key">Shift</span> Thrust Forward</div>
                 <div class="key-row"><span class="key">Space</span> Brake / Reverse</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Object Detail Modal -->
+    <div id="detail-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal" id="close-modal-btn">&times;</span>
+            <div class="modal-body">
+                <div id="object-viewer"></div>
+                <div id="object-info">
+                    <h2 id="modal-title">Planet Name</h2>
+                    <p id="modal-description">Detailed description goes here...</p>
+                    <div id="modal-stats-grid"></div>
+                </div>
             </div>
         </div>
     </div>
